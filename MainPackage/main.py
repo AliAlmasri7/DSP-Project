@@ -3,7 +3,7 @@ from tkinter import filedialog, messagebox, simpledialog
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import Task1  # your DSP functions (keep this import)
+import Task1 
 
 
 def displaySignal(ax, samples, title="Signal", continuous=False):
@@ -121,7 +121,7 @@ class SignalApp:
         displaySignal(self.ax1, self.result, "Last Signal")
         self.canvas.draw()
 
-    # ------------ New: Generate Sine/Cosine ------------
+    #-----------Task 2--------------
     def generate_signal(self, sig_type):
         # Open a small parameter input window
         win = tk.Toplevel(self.root)

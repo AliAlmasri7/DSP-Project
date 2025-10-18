@@ -63,15 +63,10 @@ def shiftSignal(signal,k,sign):
     return newSignal
 
 def foldSignal(signal):
-    """
-    Fold (reverse) a signal: x(n) -> x(-n)
-    signal: numpy array with shape (N,2)
-    """
-    # Negate the indices
+    
     folded = signal.copy()
     folded[:,0] = -folded[:,0]
 
-    # Sort by index to keep it nice for plotting
     folded = folded[folded[:,0].argsort()]
 
     return folded 

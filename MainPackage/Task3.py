@@ -3,7 +3,7 @@ import numpy as np
 
 def quantizeSignal(fileName, flag, levels=0, numOfBits=0):
     signal = Task1.readSignal(fileName)
-
+  
     if flag == 0:
         levels = np.power(2, numOfBits)
 

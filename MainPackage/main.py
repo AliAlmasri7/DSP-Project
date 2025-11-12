@@ -4,8 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import Task1
-import QuanTest1
-import QuanTest2
 
 
 # ======================== Utility Function ========================

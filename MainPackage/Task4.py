@@ -53,8 +53,15 @@ def convolution(signal1, signal2):
     n2 = signal2[:, 0].astype(int)
     h = signal2[:, 1]
 
-  
-    y = np.convolve(x, h)
+    len_x = len(x)
+    len_h = len(h)
+    len_y = len_x + len_h - 1
+    
+    y = np.zeros(len_y)
+
+    for i in range(len_x):
+        for j in range(len_h):
+            y[i + j] += x[i] * h[j]
 
     n_start = n1[0] + n2[0]
     n_end = n1[-1] + n2[-1]

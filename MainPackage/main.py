@@ -4,6 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import Task1
+import Task4
+#import QuanTest1
+#import QuanTest2
 
 
 # ======================== Utility Function ========================
@@ -83,22 +86,35 @@ class SignalApp:
         root.rowconfigure(0, weight=1)
 
         # Buttons in control frame
-        tk.Button(control_frame, text="Load Signal", width=18, command=self.load_signal).grid(row=0, column=0, pady=3)
-        tk.Button(control_frame, text="Add Signals", width=18, command=lambda: self.add_subtract(0)).grid(row=1, column=0, pady=3)
-        tk.Button(control_frame, text="Subtract Signals", width=18, command=lambda: self.add_subtract(1)).grid(row=2, column=0, pady=3)
-        tk.Button(control_frame, text="Scale Last Signal", width=18, command=self.scale_signal).grid(row=3, column=0, pady=3)
-        tk.Button(control_frame, text="Shift Last Signal", width=18, command=self.shift_signal).grid(row=4, column=0, pady=3)
-        tk.Button(control_frame, text="Fold Last Signal", width=18, command=self.fold_signal).grid(row=5, column=0, pady=3)
-        tk.Button(control_frame, text="Display Last Signal", width=18, command=self.display_last_signal).grid(row=6, column=0, pady=3)
+        tk.Label(control_frame, text="Operations", font=("Arial", 11, "bold")).grid(row=0, column=0, pady=(10, 5))
+        tk.Button(control_frame, text="Load Signal", width=18, command=self.load_signal).grid(row=1, column=0, pady=3)
+        tk.Button(control_frame, text="Add Signals", width=18, command=lambda: self.add_subtract(0)).grid(row=2, column=0, pady=3)
+        tk.Button(control_frame, text="Subtract Signals", width=18, command=lambda: self.add_subtract(1)).grid(row=3, column=0, pady=3)
+        tk.Button(control_frame, text="Scale Last Signal", width=18, command=self.scale_signal).grid(row=4, column=0, pady=3)
+        tk.Button(control_frame, text="Shift Last Signal", width=18, command=self.shift_signal).grid(row=5, column=0, pady=3)
+        tk.Button(control_frame, text="Fold Last Signal", width=18, command=self.fold_signal).grid(row=6, column=0, pady=3)
+        tk.Button(control_frame, text="Display Last Signal", width=18, command=self.display_last_signal).grid(row=7, column=0, pady=3)
 
         # Signal generation
-        tk.Label(control_frame, text="Signal Generation", font=("Arial", 11, "bold")).grid(row=7, column=0, pady=(10, 5))
-        tk.Button(control_frame, text="Generate Sine Signal", width=18, command=lambda: self.generate_signal("sine")).grid(row=8, column=0, pady=3)
-        tk.Button(control_frame, text="Generate Cosine Signal", width=18, command=lambda: self.generate_signal("cosine")).grid(row=9, column=0, pady=3)
+        tk.Label(control_frame, text="Signal Generation", font=("Arial", 11, "bold")).grid(row=8, column=0, pady=(10, 5))
+        tk.Button(control_frame, text="Generate Sine Signal", width=18, command=lambda: self.generate_signal("sine")).grid(row=9, column=0, pady=3)
+        tk.Button(control_frame, text="Generate Cosine Signal", width=18, command=lambda: self.generate_signal("cosine")).grid(row=10, column=0, pady=3)
 
         # Quantization section
-        tk.Label(control_frame, text="Quantization", font=("Arial", 11, "bold")).grid(row=10, column=0, pady=(10, 5))
-        tk.Button(control_frame, text="Quantize Signal", width=18, command=self.quantize_signal_gui).grid(row=11, column=0, pady=3)
+        tk.Label(control_frame, text="Quantization", font=("Arial", 11, "bold")).grid(row=11, column=0, pady=(10, 5))
+        tk.Button(control_frame, text="Quantize Signal", width=18, command=self.quantize_signal_gui).grid(row=12, column=0, pady=3)
+        
+        # Drivative section
+        tk.Label(control_frame, text="Derivative", font=("Arial", 11, "bold")).grid(row=13, column=0, pady=(10, 5))
+        tk.Button(control_frame, text="First Derivative", width=18, command=self.first_derivative_signal).grid(row=14, column=0, pady=3)
+        tk.Button(control_frame, text="Second Derivative", width=18, command=self.second_derivative_signal).grid(row=15, column=0, pady=3)
+        
+        # Averaging section
+        tk.Label(control_frame, text="Averaging", font=("Arial", 11, "bold")).grid(row=16, column=0, pady=(10, 5))
+        tk.Button(control_frame, text="Moving Average", width=18, command=self.moving_average_signal).grid(row=17, column=0, pady=3)
+
+        tk.Label(control_frame, text="Convolution", font=("Arial", 11, "bold")).grid(row=18, column=0, pady=(10, 5))
+        tk.Button(control_frame, text="Convolve Signals", width=18, command=self.convolve_signals).grid(row=19, column=0, pady=3)
 
         # Plot setup
         self.fig, (self.ax1, self.ax2) = plt.subplots(2, 1, figsize=(7, 5))
@@ -112,6 +128,7 @@ class SignalApp:
         file = filedialog.askopenfilename(title="Select Signal File", filetypes=[("Text Files", "*.txt")])
         if file:
             try:
+                self.loaded_file = file 
                 sig = Task1.readSignal(file)
                 self.signals.append(sig)
                 self.result = sig
@@ -166,7 +183,11 @@ class SignalApp:
             return
         displaySignal(self.ax1, self.result, "Last Signal")
         self.canvas.draw()
+        
+        
+     
 
+   
     # ------------ Signal Generation ------------
     def generate_signal(self, sig_type):
         win = tk.Toplevel(self.root)
@@ -216,7 +237,85 @@ class SignalApp:
                 messagebox.showerror("Input Error", "Please fill all fields with valid numbers.")
 
         tk.Button(win, text="Generate", command=generate).grid(row=len(labels), columnspan=2, pady=10)
+        
+        
+    
+    def first_derivative_signal(self):
+        if not self.loaded_file:
+            messagebox.showwarning("Warning", "No file loaded yet!")
+            return
+        try:
+            
+            # Compute first derivative from file
+            self.result = Task4.first_derivative(self.loaded_file)
+            # Display derivative in second plot
+            displaySignal(self.ax2, self.result, "First Derivative Signal")
+            self.canvas.draw()
+            messagebox.showinfo("Done", "First derivative computed and displayed in second plot. Check console for values.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to compute first derivative:\n{e}")
+            
+    def second_derivative_signal(self):
+        if not self.loaded_file:
+            messagebox.showwarning("Warning", "No signal loaded yet!")
+            return
+        try:
+            self.result = Task4.second_derivative(self.loaded_file)
+            # Keep original signal in first plot
+            #displaySignal(self.ax1, self.result, "Original Signal")
 
+            # Display derivative in second plot
+            displaySignal(self.ax2, self.result, "Second Derivative (Sharpened Signal)")
+            self.canvas.draw()
+
+            messagebox.showinfo("Done", "Second derivative computed and displayed in second plot.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to compute Second derivative:\n{e}")      
+            
+            
+    def moving_average_signal(self):
+        if self.result is None:
+            messagebox.showwarning("Warning", "No signal loaded yet!")
+            return
+        window = simpledialog.askinteger("Moving Average", "Enter window size:")
+        if window is None:
+            return
+        try:
+            ma_signal = Task4.moving_average(self.result, window)
+            displaySignal(self.ax2, ma_signal, f"Moving Average (window={window})")
+            self.canvas.draw()
+            messagebox.showinfo("Done", f"Moving average computed with window size {window}. Check console for values.")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+            
+    def convolve_signals(self):
+        try:
+            file1 = filedialog.askopenfilename(title="Select first signal file", filetypes=[("Text Files", "*.txt")])
+            if not file1:
+                return
+            file2 = filedialog.askopenfilename(title="Select second signal file", filetypes=[("Text Files", "*.txt")])
+            if not file2:
+                return
+
+            # Read both signals using your readSignal function
+            sig1 = Task1.readSignal(file1)
+            sig2 = Task1.readSignal(file2)
+
+            # Perform convolution (note: now we pass arrays, not file names)
+            convolved_signal = Task4.convolution(sig1, sig2)
+
+            # Display in second plot
+            displaySignal(self.ax2, convolved_signal, "Convolved Signal")
+            self.canvas.draw()
+
+            messagebox.showinfo("Success", "Convolution completed successfully! Check console for details.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to convolve signals:\n{e}")
+
+
+        
+ 
+    
     # ------------ Quantization GUI ------------
     def quantize_signal_gui(self):
         if self.result is None:
@@ -282,6 +381,11 @@ class SignalApp:
                 messagebox.showerror("Error", "Enter a valid integer for bits/levels.")
 
         tk.Button(win, text="Quantize", command=run_quantization).grid(row=3, columnspan=3, pady=10)
+        
+        
+                
+        
+                
 
 
 # ---------- Run Application ----------

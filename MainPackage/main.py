@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import Task1
 import Task4
+import Task5
 #import QuanTest1
 #import QuanTest2
 
@@ -70,6 +71,11 @@ def quantizeSignal(signal, flag, levels=0, numOfBits=0):
 # ======================== GUI Application ========================
 class SignalApp:
     def __init__(self, root):
+       # self.current_signal = 
+        self.current_signal = None
+        self.loaded_file = None
+
+
         self.root = root
         self.root.title("DSP Signal Processing GUI")
 
@@ -116,6 +122,12 @@ class SignalApp:
         tk.Label(control_frame, text="Convolution", font=("Arial", 11, "bold")).grid(row=18, column=0, pady=(10, 5))
         tk.Button(control_frame, text="Convolve Signals", width=18, command=self.convolve_signals).grid(row=19, column=0, pady=3)
 
+        # DFT & IDFT
+        tk.Label(control_frame, text="DFT / IDFT", font=("Arial", 11, "bold")).grid(row=20, column=0, pady=(10, 5))
+        tk.Button(control_frame, text="DFT", width=18, command=self.perform_dft).grid(row=21, column=0, pady=3)
+        tk.Button(control_frame, text="IDFT", width=18, command=self.perform_idft).grid(row=22, column=0, pady=3)
+
+        
         # Plot setup
         self.fig, (self.ax1, self.ax2) = plt.subplots(2, 1, figsize=(7, 5))
         self.canvas = FigureCanvasTkAgg(self.fig, master=plot_frame)
@@ -128,15 +140,20 @@ class SignalApp:
         file = filedialog.askopenfilename(title="Select Signal File", filetypes=[("Text Files", "*.txt")])
         if file:
             try:
-                self.loaded_file = file 
-                sig = Task1.readSignal(file)
+                sig = Task1.readSignal(file)   # read first!
+                self.current_signal = sig      # save last loaded signal
+                self.loaded_file = file
                 self.signals.append(sig)
                 self.result = sig
+
                 messagebox.showinfo("Loaded", f"Signal loaded with {sig.shape[0]} samples.")
+
                 displaySignal(self.ax1, sig, f"Loaded Signal {len(self.signals)}")
                 self.canvas.draw()
+
             except Exception as e:
                 messagebox.showerror("Error", str(e))
+
 
     # ------------ Signal Operations ------------
     def add_subtract(self, op):
@@ -311,10 +328,85 @@ class SignalApp:
             messagebox.showinfo("Success", "Convolution completed successfully! Check console for details.")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to convolve signals:\n{e}")
+            
+            
+    def perform_dft(self):
+        try:
+            if self.result is None:
+                messagebox.showerror("Error", "Load or generate a signal first!")
+                return
+
+            # Ask for sampling frequency
+            fs = simpledialog.askfloat("Sampling Frequency",
+                                    "Enter sampling frequency (Hz):",
+                                    minvalue=0.1)
+            if fs is None:
+                return
+
+            # Perform DFT using last signal
+            freq, X = Task5.DFT_or_IDFT(self.result, inverse=False, fs=fs)
+
+            amplitude = np.abs(X)
+            phase = np.angle(X)
+
+            # Plot amplitude spectrum on ax1
+            displaySignal(self.ax1, np.column_stack((freq, amplitude)),
+                        "Amplitude Spectrum (|X[k]|)")
+            
+            # Plot phase spectrum on ax2
+            displaySignal(self.ax2, np.column_stack((freq, phase)),
+                        "Phase Spectrum (angle(X[k]))")
+
+            self.canvas.draw()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to compute DFT\n{e}")
+   
+
+
+
+    def perform_idft(self):
+        try:
+            if self.result is None:
+                messagebox.showerror("Error", "Perform DFT first or load a magnitude/phase file!")
+                return
+
+            # Ask the user if the input is in polar form
+            polar = messagebox.askyesno("Input Type", "Is the input in Magnitude/Phase (polar) form?")
+
+            # If the input is polar, we can skip asking for fs (optional)
+            if polar:
+                # Convert last loaded signal if needed
+                signal_to_use = self.result
+                freq, x_rec = Task5.DFT_or_IDFT(signal_to_use, inverse=True, polar=True)
+            else:
+                # Ask for sampling frequency
+                fs = simpledialog.askfloat("Sampling Frequency",
+                                        "Enter sampling frequency (Hz):",
+                                        minvalue=0.1)
+                if fs is None:
+                    return
+                freq, x_rec = Task5.DFT_or_IDFT(self.result, inverse=True, fs=fs)
+
+            # Take real part for plotting (IDFT result)
+            x_real = np.real(x_rec)
+            n = np.arange(len(x_real))
+            reconstructed = np.column_stack((n, x_real))
+
+            # Plot on ax2
+            displaySignal(self.ax2, reconstructed, "Reconstructed Signal (IDFT)")
+            self.canvas.draw()
+
+            messagebox.showinfo("Done", "IDFT computed and displayed in second plot.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to perform IDFT\n{e}")
+
+
 
 
         
- 
+
     
     # ------------ Quantization GUI ------------
     def quantize_signal_gui(self):

@@ -4,19 +4,27 @@ import matplotlib.pyplot as plt
 
 def readSignal(fileName):
     with open(fileName, 'r') as f:
-        # First line: number of samples
         n = int(f.readline().strip())
 
-        samples = np.zeros((n,2))
+        samples = np.zeros((n, 2))
         for i in range(n):
             line = f.readline().strip()
             if not line:
                 break
-            x,y = line.split()
-            samples[i,0] = int(x)
-            samples[i,1] = float(y)
+
+            x, y = line.split()
+
+            # Strip trailing 'f' if present (example: 20.9f → 20.9)
+            if x.endswith('f') or x.endswith('F'):
+                x = x[:-1]
+            if y.endswith('f') or y.endswith('F'):
+                y = y[:-1]
+
+            samples[i, 0] = float(x)
+            samples[i, 1] = float(y)
 
     return samples
+
 
 def displaySignal(samples,title = "Signal"):
     plt.figure(figsize=(8,4))

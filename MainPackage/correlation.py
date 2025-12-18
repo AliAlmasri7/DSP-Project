@@ -1,18 +1,19 @@
 import numpy as np
 import os
 import Task1
-
+import CompareSignal
 #Direct correlation
 
 import numpy as np
 
 def direct_correlation(x, y):
 
-    # Extract amplitudes
     if x.ndim == 2:
-        x = x[:, 1]
-    if y.ndim == 2:
-        y = y[:, 1]
+        indices = x[:, 0].ravel()   # first column → 1D
+        x_vals = x[:, 1].astype(float)
+    else:
+        x_vals = np.asarray(x, dtype=float)
+        indices = np.arange(len(x_vals))  # auto indices
 
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
@@ -30,6 +31,9 @@ def direct_correlation(x, y):
             s += x[n] * y[(n + k) % N]
         corr[k] = s / norm
 
+    fileName = r"C:\Users\Maxs_Z\Documents\DSP Tasks\MainPackage\CorrOutput.txt"
+    CompareSignal.Compare_Signals(fileName,indices,corr)
+    
     return corr
 
 #Time delay using correlation

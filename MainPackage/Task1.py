@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 
 def readSignal(fileName):
     with open(fileName, 'r') as f:
+        f.readline()
+        f.readline()
         n = int(f.readline().strip())
 
         samples = np.zeros((n, 2))

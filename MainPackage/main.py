@@ -6,8 +6,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import Task1
 import Task4
 import Task5
-#import QuanTest1
-#import QuanTest2
+import correlation
+import os
+
 
 
 # ======================== Utility Function ========================
@@ -126,6 +127,13 @@ class SignalApp:
         tk.Label(control_frame, text="DFT / IDFT", font=("Arial", 11, "bold")).grid(row=20, column=0, pady=(10, 5))
         tk.Button(control_frame, text="DFT", width=18, command=self.perform_dft).grid(row=21, column=0, pady=3)
         tk.Button(control_frame, text="IDFT", width=18, command=self.perform_idft).grid(row=22, column=0, pady=3)
+        
+        # Correlation
+        tk.Label(control_frame, text="Correlation Analysis", font=("Arial", 11, "bold")).grid(row=23, column=0, pady=(10, 5))
+        tk.Button(control_frame, text="Apply Correlation", width=18, command=self.apply_correlation).grid(row=24, column=0, pady=3)
+        tk.Button(control_frame, text="Compute Time Delay", width=18, command=self.compute_time_delay).grid(row=25, column=0, pady=3)
+        tk.Button(control_frame, text="Classify Signal", width=18, command=self.classify_signal).grid(row=26, column=0, pady=3)
+
 
         
         # Plot setup
@@ -200,7 +208,81 @@ class SignalApp:
             return
         displaySignal(self.ax1, self.result, "Last Signal")
         self.canvas.draw()
+
+    # ------------ Correlation ------------
+
+    def apply_correlation(self):
+        if len(self.signals) < 2:
+            messagebox.showwarning("Warning", "Load at least two signals first!")
+            return
         
+        x = self.signals[-2][:, 1]  
+        y = self.signals[-1][:, 1]
+        self.corr_values = correlation.direct_correlation(x, y)
+
+        
+        # Plot correlation
+        n = np.arange(len(self.corr_values))
+        displaySignal(self.ax2, np.column_stack((n, self.corr_values)), "Direct Correlation")
+        self.canvas.draw()
+        messagebox.showinfo("Done", "Correlation computed and plotted.")
+
+    def compute_time_delay(self):
+        if len(self.signals) < 2:
+            messagebox.showwarning("Warning", "Load at least two signals first!")
+            return
+
+        # Ask user for sampling frequency
+        fs = simpledialog.askfloat("Sampling Frequency",
+                                    "Enter sampling frequency fs (Hz):",
+                                    minvalue=0.0001)
+        if fs is None:
+            return
+
+        x = self.signals[-2]
+        y = self.signals[-1]
+
+        # Call the ORIGINAL function
+        corr, j_max, delay = correlation.compute_time_delay(x, y, fs)
+
+        # Save correlation (optional, for plotting later)
+        self.corr_values = corr
+
+        messagebox.showinfo(
+            "Time Delay Result",
+            f"Max correlation at lag j = {j_max}\n"
+            f"Sampling period Ts = {1/fs:.6f} s\n"
+            f"Time delay = {delay:.6f} s"
+        )
+
+
+    def classify_signal(self):
+        test_file = filedialog.askopenfilename(
+            title="Select Test Signal",
+            filetypes=[("Text files", "*.txt")]
+        )
+        if not test_file:
+            return
+
+        classA_folder = filedialog.askdirectory(title="Select Class A (Down) Folder")
+        classB_folder = filedialog.askdirectory(title="Select Class B (Up) Folder")
+
+        if not classA_folder or not classB_folder:
+            return
+
+        result, avgA, avgB = correlation.classify_eog_signal(
+            test_file,
+            classA_folder,
+            classB_folder
+        )
+
+        messagebox.showinfo(
+            "Classification Result",
+            f"{result}\n\n"
+            f"Average Max Correlation (Class A): {avgA:.4f}\n"
+            f"Average Max Correlation (Class B): {avgB:.4f}"
+        )
+    
         
      
 
@@ -473,12 +555,10 @@ class SignalApp:
                 messagebox.showerror("Error", "Enter a valid integer for bits/levels.")
 
         tk.Button(win, text="Quantize", command=run_quantization).grid(row=3, columnspan=3, pady=10)
-        
-        
-                
-        
-                
 
+        
+
+        
 
 # ---------- Run Application ----------
 if __name__ == "__main__":

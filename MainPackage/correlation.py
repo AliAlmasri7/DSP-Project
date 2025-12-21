@@ -8,33 +8,46 @@ import numpy as np
 
 def direct_correlation(x, y):
 
+    # Handle x (indices + values)
     if x.ndim == 2:
-        indices = x[:, 0].ravel()   # first column → 1D
+        indices = x[:, 0].ravel()
         x_vals = x[:, 1].astype(float)
     else:
         x_vals = np.asarray(x, dtype=float)
-        indices = np.arange(len(x_vals))  # auto indices
+        indices = np.arange(len(x_vals))
 
-    x = np.asarray(x, dtype=float)
-    y = np.asarray(y, dtype=float)
+    # Handle y (values only)
+    if y.ndim == 2:
+        y_vals = y[:, 1].astype(float)
+    else:
+        y_vals = np.asarray(y, dtype=float)
 
-    N = len(x)
+    x_vals = x_vals.ravel()
+    y_vals = y_vals.ravel()
 
-    # Normalization
-    norm = np.sqrt(np.sum(x**2) * np.sum(y**2))
+    N = min(len(x_vals), len(y_vals))
+    x_vals = x_vals[:N]
+    y_vals = y_vals[:N]
+
+    # Normalization (scalar!)
+    norm = np.sqrt(np.sum(x_vals**2) * np.sum(y_vals**2))
+    if norm == 0:
+        raise ValueError("Normalization factor is zero")
 
     corr = np.zeros(N)
 
+    # Circular correlation (left shift of y)
     for k in range(N):
         s = 0.0
         for n in range(N):
-            s += x[n] * y[(n + k) % N]
+            s += x_vals[n] * y_vals[(n + k) % N]
         corr[k] = s / norm
 
     fileName = r"C:\Users\Maxs_Z\Documents\DSP Tasks\MainPackage\CorrOutput.txt"
-    CompareSignal.Compare_Signals(fileName,indices,corr)
-    
+    CompareSignal.Compare_Signals(fileName, indices, corr)
+
     return corr
+
 
 #Time delay using correlation
 

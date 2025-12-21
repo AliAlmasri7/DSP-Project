@@ -8,6 +8,7 @@ import Task4
 import Task5
 import correlation
 import os
+import Task6
 
 
 
@@ -84,8 +85,33 @@ class SignalApp:
         self.result = None
 
         # Frames
-        control_frame = tk.Frame(root)
-        control_frame.grid(row=0, column=0, sticky="ns", padx=10, pady=10)
+        # -------- Scrollable Control Panel --------
+        control_container = tk.Frame(root)
+        control_container.grid(row=0, column=0, sticky="ns")
+
+        canvas = tk.Canvas(control_container, width=230)
+        scrollbar = tk.Scrollbar(control_container, orient="vertical", command=canvas.yview)
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        control_frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=control_frame, anchor="nw")
+
+        def on_configure(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        control_frame.bind("<Configure>", on_configure)
+        
+        
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+
 
         plot_frame = tk.Frame(root)
         plot_frame.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
@@ -133,6 +159,14 @@ class SignalApp:
         tk.Button(control_frame, text="Apply Correlation", width=18, command=self.apply_correlation).grid(row=24, column=0, pady=3)
         tk.Button(control_frame, text="Compute Time Delay", width=18, command=self.compute_time_delay).grid(row=25, column=0, pady=3)
         tk.Button(control_frame, text="Classify Signal", width=18, command=self.classify_signal).grid(row=26, column=0, pady=3)
+
+        #Filtering
+        tk.Label(control_frame, text="Filtering", font=("Arial", 11, "bold")).grid(row=27, column=0, pady=(10,5))
+        tk.Button(control_frame, text="Low Pass Filter", width=18, command=lambda: self.fir_filter_gui("Low Pass")).grid(row=28, column=0, pady=3)
+        tk.Button(control_frame, text="High Pass Filter", width=18, command=lambda: self.fir_filter_gui("High Pass")).grid(row=29, column=0, pady=3)
+        tk.Button(control_frame, text="Band Pass Filter", width=18, command=lambda: self.fir_filter_gui("Band Pass")).grid(row=30, column=0, pady=3)
+        tk.Button(control_frame, text="Band Stop Filter", width=18, command=lambda: self.fir_filter_gui("Band Stop")).grid(row=31, column=0, pady=3)
+
 
 
         
@@ -486,8 +520,95 @@ class SignalApp:
 
 
 
+    
+    # ------------ FIR Filter GUI ------------
+    def fir_filter_gui(self, filter_type):
+        if self.result is None:
+            messagebox.showwarning("Warning", "Load a signal first!")
+            return
 
-        
+        # Ask for required parameters
+        Fs = simpledialog.askfloat("Sampling Frequency", "Enter Fs (Hz):")
+        StopBandAttenuation = simpledialog.askfloat("Stopband Attenuation", "Enter δs (dB):")
+        TransitionBand = simpledialog.askfloat("Transition Band", "Enter Δf (Hz):")
+
+        if None in (Fs, StopBandAttenuation, TransitionBand):
+            return
+
+        # -------- LOW / HIGH PASS --------
+        if filter_type in ["Low Pass", "High Pass"]:
+            Fc = simpledialog.askfloat("Cutoff Frequency", "Enter cutoff frequency Fc (Hz):")
+            if Fc is None:
+                return
+
+            h, n = Task6.design_fir(
+                filter_type,
+                Fs,
+                StopBandAttenuation,
+                transition_band=TransitionBand,
+                fc=Fc
+            )
+
+        # -------- BAND PASS / BAND STOP --------
+        else:
+            F1 = simpledialog.askfloat("F1", "Enter lower cutoff frequency F1 (Hz):")
+            F2 = simpledialog.askfloat("F2", "Enter upper cutoff frequency F2 (Hz):")
+
+            if None in (F1, F2):
+                return
+
+            h, n = Task6.design_fir(
+                filter_type,
+                Fs,
+                StopBandAttenuation,
+                transition_band=TransitionBand,
+                f1=F1,
+                f2=F2
+            )
+
+        # -------- Display FIR coefficients --------
+        displaySignal(
+            self.ax2,
+            np.column_stack((n, h)),
+            f"{filter_type} FIR Coefficients"
+        )
+        self.canvas.draw()
+
+        # -------- Apply filter (DIRECT method) --------
+        filtered_direct = Task6.apply_fir(self.result, h)
+
+        Task6.save_filtered_signal(
+            filtered_direct,
+            f"{filter_type.replace(' ', '_')}_Filtered_Direct.txt"
+        )
+
+        # -------- Apply filter (FAST method) --------
+        filtered_fast = Task6.apply_fir_fast(self.result, h, Fs)
+
+        Task6.save_filtered_signal(
+            filtered_fast,
+            f"{filter_type.replace(' ', '_')}_Filtered_Fast.txt"
+        )
+
+        # Use direct method result for display & further processing
+        self.result = filtered_direct
+
+
+        displaySignal(
+            self.ax1,
+            self.result,
+            f"{filter_type} Filtered Signal"
+        )
+        self.canvas.draw()
+
+        # -------- Save coefficients --------
+        Task6.save_filter_coefficients(n, h,
+                      f"{filter_type.replace(' ', '_')}_Coefficients.txt")
+
+        messagebox.showinfo(
+            "Done",
+            f"{filter_type} FIR filter applied successfully!"
+        )
 
     
     # ------------ Quantization GUI ------------
